@@ -10,3 +10,4 @@ kafka-python
 pyspark
 seaborn
 streamlit-autorefresh
+plotly
