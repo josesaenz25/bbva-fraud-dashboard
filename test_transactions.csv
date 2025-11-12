@@ -1,0 +1,7 @@
+user_id,amount,hour,channel,is_fraud
+user_1,950.00,14,web,0
+user_2,1200.00,10,mobile,0
+user_3,980.00,16,ATM,0
+user_4,5000.00,2,web,1
+user_5,4200.00,3,mobile,1
+user_6,3900.00,1,ATM,1
