@@ -21,6 +21,34 @@ import pytz
 
 
 
+st.markdown("""
+<style>
+/* Ocultar el menú de hamburguesa (≡) */
+header[data-testid="stHeader"] {
+    visibility: hidden;
+}
+
+/* Ocultar el footer de Streamlit */
+footer {
+    visibility: hidden;
+}
+
+/* Ocultar el botón "Gestionar aplicación" */
+button[title="Manage app"] {
+    display: none;
+}
+
+/* Ocultar el logotipo de Streamlit */
+img[alt="Streamlit"] {
+    display: none;
+}
+
+/* Opcional: ocultar el ícono de ayuda (?) */
+button[title="View app help"] {
+    display: none;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 
@@ -201,6 +229,34 @@ if st.session_state.autenticado:
 "\n"
 "\n"
 from datetime import datetime
+
+
+
+# 🎨 Estilo personalizado para scrollbar
+st.markdown("""
+<style>
+::-webkit-scrollbar {
+    width: 12px;
+}
+::-webkit-scrollbar-track {
+    background: #e0e0e0;
+    border-radius: 6px;
+}
+::-webkit-scrollbar-thumb {
+    background-color: #003366;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+}
+::-webkit-scrollbar-horizontal {
+    height: 12px;
+}
+::-webkit-scrollbar-thumb:horizontal {
+    background-color: #003366;
+    border-radius: 6px;
+    border: 2px solid #e0e0e0;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # 🔄 Refrescar cada segundo
 st_autorefresh(interval=1000, limit=None, key="reloj_mx")
