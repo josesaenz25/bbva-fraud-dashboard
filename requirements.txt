@@ -11,3 +11,4 @@ pyspark
 seaborn
 streamlit-autorefresh
 plotly
+openpyxl
