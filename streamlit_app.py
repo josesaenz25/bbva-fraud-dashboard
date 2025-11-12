@@ -23,17 +23,17 @@ import pytz
 
 st.markdown("""
 <style>
-/* Oculta el botón "Gestionar aplicación" en Streamlit Cloud */
+/* Oculta el botón "Gestionar aplicación" */
 div[data-testid="stActionButtonContainer"] {
     display: none !important;
 }
 
-/* También oculta el contenedor superior si es necesario */
+/* Oculta el menú de hamburguesa (≡) */
 header[data-testid="stHeader"] {
     display: none !important;
 }
 
-/* Oculta el footer */
+/* Oculta el footer de Streamlit */
 footer {
     display: none !important;
 }
@@ -42,8 +42,24 @@ footer {
 img[alt="Streamlit"] {
     display: none !important;
 }
+
+/* Oculta el ícono de ayuda (?) */
+button[title="View app help"] {
+    display: none !important;
+}
+
+/* Oculta el contenedor lateral si aparece */
+div[data-testid="stSidebar"] {
+    display: none !important;
+}
+
+/* Elimina cualquier sombra o borde residual */
+section.main {
+    padding-top: 0rem;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
