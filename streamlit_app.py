@@ -23,32 +23,28 @@ import pytz
 
 st.markdown("""
 <style>
-/* Ocultar el menú de hamburguesa (≡) */
+/* Oculta el botón "Gestionar aplicación" en Streamlit Cloud */
+div[data-testid="stActionButtonContainer"] {
+    display: none !important;
+}
+
+/* También oculta el contenedor superior si es necesario */
 header[data-testid="stHeader"] {
-    visibility: hidden;
+    display: none !important;
 }
 
-/* Ocultar el footer de Streamlit */
+/* Oculta el footer */
 footer {
-    visibility: hidden;
+    display: none !important;
 }
 
-/* Ocultar el botón "Gestionar aplicación" */
-button[title="Manage app"] {
-    display: none;
-}
-
-/* Ocultar el logotipo de Streamlit */
+/* Oculta el logotipo de Streamlit */
 img[alt="Streamlit"] {
-    display: none;
-}
-
-/* Opcional: ocultar el ícono de ayuda (?) */
-button[title="View app help"] {
-    display: none;
+    display: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
