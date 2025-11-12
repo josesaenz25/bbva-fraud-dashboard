@@ -24,7 +24,7 @@ import pytz
 st.markdown("""
 <style>
 /* Oculta el botón "Gestionar aplicación" */
-div[data-testid="stActionButtonContainer"] {
+div[data-testid="stToolbar"] button {
     display: none !important;
 }
 
@@ -48,17 +48,18 @@ button[title="View app help"] {
     display: none !important;
 }
 
-/* Oculta el contenedor lateral si aparece */
+/* Oculta la barra lateral si aparece */
 div[data-testid="stSidebar"] {
     display: none !important;
 }
 
-/* Elimina cualquier sombra o borde residual */
+/* Elimina espacio superior residual */
 section.main {
     padding-top: 0rem;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
