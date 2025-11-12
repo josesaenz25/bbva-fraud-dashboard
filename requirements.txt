@@ -9,3 +9,4 @@ mlxtend
 kafka-python
 pyspark
 seaborn
+streamlit-autorefresh
