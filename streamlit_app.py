@@ -201,8 +201,12 @@ if st.session_state.autenticado:
 "\n"
 from datetime import datetime
 
-# 🕒 Fecha y hora actual
-fecha_hora = datetime.now().strftime("%d/%m/%Y %H:%M")
+# 🔄 Refrescar cada segundo (1000 ms)
+st_autorefresh(interval=1000, limit=None, key="bbva_reloj_segundo")
+
+# 🕒 Obtener fecha y hora actual
+ahora = datetime.now()
+fecha_hora = ahora.strftime("%d/%m/%Y %H:%M:%S")
 
 # 🧩 Encabezado institucional
 st.markdown(f"""
