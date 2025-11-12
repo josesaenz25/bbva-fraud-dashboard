@@ -8,3 +8,4 @@ imblearn
 mlxtend
 kafka-python
 pyspark
+seaborn
