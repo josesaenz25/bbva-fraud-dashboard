@@ -12,3 +12,5 @@ seaborn
 streamlit-autorefresh
 plotly
 openpyxl
+time
+io
