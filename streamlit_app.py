@@ -17,6 +17,7 @@ from db import guardar_transaccion, obtener_historial
 from streamlit_autorefresh import st_autorefresh
 import plotly.express as px
 import plotly.graph_objects as go
+import pytz
 
 
 
@@ -201,12 +202,13 @@ if st.session_state.autenticado:
 "\n"
 from datetime import datetime
 
-# 🔄 Refrescar cada segundo (1000 ms)
-st_autorefresh(interval=1000, limit=None, key="bbva_reloj_segundo")
+# 🔄 Refrescar cada segundo
+st_autorefresh(interval=1000, limit=None, key="reloj_mx")
 
-# 🕒 Obtener fecha y hora actual
-ahora = datetime.now()
-fecha_hora = ahora.strftime("%d/%m/%Y %H:%M:%S")
+# 🕒 Obtener hora local de Ciudad de México
+zona_mexico = pytz.timezone("America/Mexico_City")
+ahora_local = datetime.now(zona_mexico)
+fecha_hora = ahora_local.strftime("%d/%m/%Y %H:%M:%S")
 
 # 🧩 Encabezado institucional
 st.markdown(f"""
@@ -377,13 +379,17 @@ if st.button("Evaluar transacción", key="evaluar_individual"):
 "\n"
 # 🧪 Simulación masiva
 st.subheader("🧪 Simulación masiva de transacciones")
+
 if st.button("Simular 100 transacciones", key="simular_masiva"):
+    nuevas_transacciones = []
+
     for _ in range(100):
         id_usuario = random.choice(list(PERFILES_POR_ID.keys()))
         perfil = PERFILES_POR_ID[id_usuario]
         canal = random.choice(["SPEI", "CoDi", "efectivo", "App"])
         monto = round(random.uniform(100, 60000), 2)
         hora = random.randint(0, 23)
+
         transaccion = {
             "id_usuario": id_usuario,
             "perfil": perfil,
@@ -392,13 +398,19 @@ if st.button("Simular 100 transacciones", key="simular_masiva"):
             "hora": hora,
             "fecha": datetime.now()
         }
+
         riesgo = modelo_predictivo(transaccion)
         transaccion["riesgo"] = riesgo
         transaccion["umbral"] = calcular_umbral(perfil)
         transaccion["resultado"] = "FRAUDE" if riesgo >= transaccion["umbral"] else "LEGÍTIMA"
-        st.session_state.historial.append(transaccion)
-        time.sleep(0.01)
-    st.success("✅ Simulación completada")
+
+        nuevas_transacciones.append(transaccion)
+
+    # ✅ Actualizar el historial una sola vez
+    st.session_state.historial.extend(nuevas_transacciones)
+
+    # ✅ Confirmación visual
+    st.success("✅ Simulación completada con 100 transacciones")
 
 
 "\n"

@@ -12,3 +12,4 @@ seaborn
 streamlit-autorefresh
 plotly
 openpyxl
+pytz
