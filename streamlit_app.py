@@ -21,26 +21,6 @@ import pytz
 
 
 
-# 🔒 Ocultar botón "Gestionar aplicación"
-st.markdown("""
-<style>
-button[title="Manage app"] {
-    visibility: hidden !important;
-    display: none !important;
-    height: 0px !important;
-    width: 0px !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    position: absolute !important;
-    z-index: -1 !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-
-
-
-
 
 
 
