@@ -584,9 +584,5 @@ if not df.empty:
 
 
 
-
-
-
-
 else:
     st.info("No hay transacciones registradas aún.")
