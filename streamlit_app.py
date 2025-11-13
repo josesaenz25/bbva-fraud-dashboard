@@ -23,8 +23,8 @@ import pytz
 
 st.markdown("""
 <style>
-/* Oculta el botón "Gestionar aplicación" */
-div[data-testid="stToolbar"] button {
+/* Oculta el botón "Gestionar aplicación" dentro del toolbar */
+div[data-testid="stToolbar"] button[title="Manage app"] {
     display: none !important;
 }
 
@@ -59,6 +59,7 @@ section.main {
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
