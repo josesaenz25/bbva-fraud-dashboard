@@ -21,41 +21,18 @@ import pytz
 
 
 
+# 🔒 Ocultar botón "Gestionar aplicación"
 st.markdown("""
 <style>
-/* Oculta el botón "Gestionar aplicación" dentro del toolbar */
-div[data-testid="stToolbar"] button[title="Manage app"] {
+button[title="Manage app"] {
+    visibility: hidden !important;
     display: none !important;
-}
-
-/* Oculta el menú de hamburguesa (≡) */
-header[data-testid="stHeader"] {
-    display: none !important;
-}
-
-/* Oculta el footer de Streamlit */
-footer {
-    display: none !important;
-}
-
-/* Oculta el logotipo de Streamlit */
-img[alt="Streamlit"] {
-    display: none !important;
-}
-
-/* Oculta el ícono de ayuda (?) */
-button[title="View app help"] {
-    display: none !important;
-}
-
-/* Oculta la barra lateral si aparece */
-div[data-testid="stSidebar"] {
-    display: none !important;
-}
-
-/* Elimina espacio superior residual */
-section.main {
-    padding-top: 0rem;
+    height: 0px !important;
+    width: 0px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    z-index: -1 !important;
 }
 </style>
 """, unsafe_allow_html=True)
