@@ -13,3 +13,5 @@ streamlit-autorefresh
 plotly
 openpyxl
 pytz
+xlsxwriter
+random
