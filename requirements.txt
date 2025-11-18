@@ -14,4 +14,3 @@ plotly
 openpyxl
 pytz
 xlsxwriter
-random
