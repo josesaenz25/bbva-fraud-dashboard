@@ -527,62 +527,53 @@ if not df.empty:
         legitima=round(values[labels.index("LEGÍTIMA")] * 100 / sum(values), 1) if "LEGÍTIMA" in labels else 0
     ), unsafe_allow_html=True)
 
-    # 📊 Frecuencia de fraudes por hora (2D estilo BBVA)
-    st.subheader("📊 Frecuencia de fraudes por hora")
+# 📊 Frecuencia de fraudes por hora (fondo negro, texto negro)
+st.subheader("📊 Frecuencia de fraudes por hora")
 
-    df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
-    df_fraudes["hora"] = pd.to_numeric(df_fraudes["hora"], errors="coerce")
+df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
+df_fraudes["hora"] = pd.to_numeric(df_fraudes["hora"], errors="coerce")
 
-    conteo_por_hora = df_fraudes["hora"].value_counts().sort_index()
-    horas = list(range(24))
-    etiquetas_horas = [str(h) for h in horas]
-    valores = [conteo_por_hora.get(h, 0) for h in horas]
+conteo_por_hora = df_fraudes["hora"].value_counts().sort_index()
+horas = list(range(24))
+etiquetas_horas = [str(h) for h in horas]
+valores = [conteo_por_hora.get(h, 0) for h in horas]
 
-    fig = go.Figure(go.Bar(
-        x=horas,
-        y=valores,
-        text=valores,
-        textposition="outside",
-        marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
-        hovertemplate="Hora %{x}<br>Fraudes: %{y}<extra></extra>"
-    ))
+fig = go.Figure(go.Bar(
+    x=horas,
+    y=valores,
+    text=[str(v) for v in valores],
+    textposition="outside",
+    marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
+    textfont=dict(color="#000000", size=14),  # Texto negro
+    hovertemplate="Hora %{x}<br>Fraudes: %{y}<extra></extra>"
+))
 
-    fig.update_layout(
-        plot_bgcolor="white",
-        paper_bgcolor="white",
-        font=dict(color="#0033A0"),
-        margin=dict(l=40, r=40, t=40, b=40),
-        xaxis=dict(
-            title=dict(text="Hora", font=dict(color="#0033A0", size=16)),
-            tickmode="array",
-            tickvals=horas,
-            ticktext=etiquetas_horas,
-            linecolor="#0033A0",
-            gridcolor="#E0E0E0",
-            tickfont=dict(color="#0033A0", size=12),
-            showline=True,
-            showgrid=True,
-            zeroline=False
-        ),
-        yaxis=dict(
-            title=dict(text="Cantidad de fraudes", font=dict(color="#0033A0", size=16)),
-            linecolor="#0033A0",
-            gridcolor="#E0E0E0",
-            tickfont=dict(color="#0033A0", size=12),
-            showline=True,
-            showgrid=True,
-            zeroline=False
-        )
+fig.update_layout(
+    plot_bgcolor="black",       # Fondo del gráfico
+    paper_bgcolor="black",      # Fondo del lienzo
+    font=dict(color="#000000"), # Texto general en negro
+    margin=dict(l=40, r=40, t=40, b=40),
+    xaxis=dict(
+        title=dict(text="Hora", font=dict(color="#000000", size=16)),
+        tickmode="array",
+        tickvals=horas,
+        ticktext=etiquetas_horas,
+        linecolor="#FFFFFF",
+        gridcolor="#444444",
+        tickfont=dict(color="#000000", size=12),
+        showline=True,
+        showgrid=True,
+        zeroline=False
+    ),
+    yaxis=dict(
+        title=dict(text="Cantidad de fraudes", font=dict(color="#000000", size=16)),
+        linecolor="#FFFFFF",
+        gridcolor="#444444",
+        tickfont=dict(color="#000000", size=12),
+        showline=True,
+        showgrid=True,
+        zeroline=False
     )
+)
 
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-
-
-
-else:
-    st.info("No hay transacciones registradas aún.")
+st.plotly_chart(fig, use_container_width=True)
