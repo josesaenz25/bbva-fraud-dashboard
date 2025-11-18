@@ -500,37 +500,25 @@ if not df.empty:
         legitima=round(values[labels.index("LEGÍTIMA")] * 100 / sum(values), 1) if "LEGÍTIMA" in labels else 0
     ), unsafe_allow_html=True)
 
-# 📊 Frecuencia de fraudes por hora (fondo negro, números azules, sin "undefined")
+# 📊 Frecuencia de fraudes por hora (fondo negro, números azules, sin "undefined" y sin filtros visibles)
 st.subheader("📊 Frecuencia de fraudes por hora")
 
 df = pd.DataFrame(st.session_state.historial)
 
-# Filtro seguro
 if not df.empty:
     df["fecha"] = pd.to_datetime(df["fecha"])
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        fecha_inicio = st.date_input("Desde", value=df["fecha"].min().date(), key="fecha_inicio")
-    with col_f2:
-        fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date(), key="fecha_fin")
-    df_filtrado = df[(df["fecha"].dt.date >= fecha_inicio) & (df["fecha"].dt.date <= fecha_fin)]
-else:
-    df_filtrado = pd.DataFrame()
-
-# Graficar si hay datos
-if not df_filtrado.empty:
-    df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
+    df_fraudes = df[df["resultado"] == "FRAUDE"].copy()
     df_fraudes["hora"] = pd.to_numeric(df_fraudes["hora"], errors="coerce")
 
     conteo_por_hora = df_fraudes["hora"].value_counts().sort_index()
     horas = list(range(24))
     etiquetas_horas = [str(h) for h in horas]
-    valores = [int(conteo_por_hora.get(h, 0)) for h in horas]  # Asegura que todos sean enteros
+    valores = [int(conteo_por_hora.get(h, 0)) for h in horas]
 
     fig = go.Figure(go.Bar(
         x=etiquetas_horas,
         y=valores,
-        text=[str(v) for v in valores],  # Asegura que todos los textos sean strings válidos
+        text=[str(v) for v in valores],
         textposition="outside",
         marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
         textfont=dict(color="#0033A0", size=14),
@@ -568,4 +556,4 @@ if not df_filtrado.empty:
 
     st.plotly_chart(fig, use_container_width=True)
 else:
-    st.info("No hay transacciones filtradas para mostrar el gráfico.")
+    st.info("No hay transacciones disponibles para mostrar el gráfico.")
