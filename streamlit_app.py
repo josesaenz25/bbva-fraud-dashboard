@@ -574,6 +574,7 @@ if not df.empty:
     "\n"
     "\n"
     "\n"
+    "\n"
     # 🧠 Minería de datos: Clustering y reglas de asociación
     st.markdown("""
     <div style="
@@ -603,8 +604,8 @@ if not df.empty:
     from collections import defaultdict
 
 
-    "\n"
-    "\n"
+
+
     "\n"
     # ——— Agrupación dinámica por monto y hora (KMeans) con resumen ejecutivo ———
     import numpy as np
