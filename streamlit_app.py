@@ -606,7 +606,7 @@ if not df.empty:
     "\n"
     "\n"
     "\n"
-    # ——— Agrupación por monto y hora (KMeans) con estilo BBVA ———
+    # ——— Agrupación dinámica por monto y hora (KMeans) con resumen ejecutivo ———
     import numpy as np
     from sklearn.cluster import KMeans
 
@@ -617,10 +617,10 @@ if not df.empty:
         except:
             return valor
 
-    # Construir dataset para clustering a partir del filtrado
+    # Construir dataset actualizado
     df_cluster = df_filtrado.copy()
 
-    # Asegurar columnas numéricas (monto puede venir formateado como texto con $ y comas)
+    # Asegurar columnas numéricas
     df_cluster["hora"] = pd.to_numeric(df_cluster["hora"], errors="coerce")
     df_cluster["monto"] = (
         df_cluster["monto"]
@@ -632,17 +632,23 @@ if not df.empty:
 
     # Subconjunto válido para clustering
     X_cluster = df_cluster[["monto", "hora"]].dropna()
-
-    # Inicializar columna 'grupo' para evitar NameError aunque no haya clustering
     df_cluster["grupo"] = np.nan
 
-    # Ejecutar KMeans solo si hay suficientes puntos
+    # Ejecutar KMeans si hay suficientes datos
     if len(X_cluster) >= 5:
         kmeans = KMeans(n_clusters=3, random_state=42).fit(X_cluster)
-        # Asignar etiquetas respetando los índices válidos
         df_cluster.loc[X_cluster.index, "grupo"] = kmeans.labels_
 
-        # Encabezado visual sin margen inferior para pegarse a la tabla
+        # Reordenar grupos según patrón real
+        resumen = df_cluster.loc[X_cluster.index].groupby("grupo")[["monto", "hora"]].mean()
+        ordenado = resumen.sort_values(by=["monto", "hora"], ascending=[True, False])
+        nuevo_orden = {old: new for new, old in enumerate(ordenado.index)}
+        df_cluster.loc[X_cluster.index, "grupo"] = df_cluster.loc[X_cluster.index, "grupo"].map(nuevo_orden)
+
+        # ✅ Convertir grupos a enteros (0, 1, 2)
+        df_cluster["grupo"] = df_cluster["grupo"].astype(int)
+
+        # Encabezado visual BBVA
         st.markdown("""
             <div style="
                 background-color: white;
@@ -657,11 +663,31 @@ if not df.empty:
             </div>
         """, unsafe_allow_html=True)
 
-        # Preparar tabla BBVA con texto centrado y monto formateado
-        tabla_kmeans = df_cluster.loc[X_cluster.index, ["monto", "hora", "grupo"]].head(10).copy()
+        # Tabla de transacciones agrupadas
+        tabla_kmeans = df_cluster.loc[X_cluster.index, ["monto", "hora", "grupo"]].copy()
         tabla_kmeans.columns = ["Monto", "Hora", "Grupo"]
         tabla_kmeans["Monto"] = tabla_kmeans["Monto"].apply(formato_moneda)
-        tabla_html = tabla_kmeans.to_html(classes="bbva-tabla", index=False, justify="center")
+        tabla_html = tabla_kmeans.head(10).to_html(classes="bbva-tabla", index=False, justify="center")
+
+        # Calcular rangos dinámicos
+        rangos = df_cluster.loc[X_cluster.index].groupby("grupo")["monto"].agg(["min", "max"]).round(2)
+        rangos["min"] = rangos["min"].apply(formato_moneda)
+        rangos["max"] = rangos["max"].apply(formato_moneda)
+
+        resumen_ejecutivo = pd.DataFrame({
+            "Grupo": ["0", "1", "2"],
+            "Descripción": [
+                "Transacciones pequeñas en horas nocturnas",
+                "Transacciones medianas en horario laboral",
+                "Transacciones grandes en horarios irregulares"
+            ],
+            "Rango de monto": [
+                f"{rangos.loc[0, 'min']} – {rangos.loc[0, 'max']}",
+                f"{rangos.loc[1, 'min']} – {rangos.loc[1, 'max']}",
+                f"{rangos.loc[2, 'min']} – {rangos.loc[2, 'max']}"
+            ]
+        })
+        resumen_html = resumen_ejecutivo.to_html(classes="bbva-tabla", index=False, justify="center")
 
         # CSS corporativo
         st.markdown("""
@@ -688,9 +714,30 @@ if not df.empty:
             </style>
         """, unsafe_allow_html=True)
 
+        # Mostrar tabla y resumen
         st.markdown(tabla_html, unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="
+                background-color: white;
+                border: 2px solid #0033A0;
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                margin-top: 10px;
+                margin-bottom: 10px;
+            ">
+                <h4 style="color:#0033A0; font-family:Segoe UI;">🧠 Resumen ejecutivo de agrupamiento</h4>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown(resumen_html, unsafe_allow_html=True)
+
     else:
         st.info("⚠️ No hay suficientes datos limpios para clustering (se requieren ≥ 5 filas con monto y hora numéricos).")
+
+
+
+
 
 
 
