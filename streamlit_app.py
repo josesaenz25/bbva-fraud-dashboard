@@ -467,6 +467,10 @@ if not df.empty:
     excel_data = convertir_excel(df_filtrado)
     st.download_button("📥 Descargar historial en Excel", data=excel_data, file_name="historial_fraudes.xlsx")
 
+
+    "\n"
+    "\n"
+    "\n"
     # 📈 Proporción de fraudes detectados
     st.subheader("📈 Proporción de fraudes detectados:")
     conteo = df_filtrado["resultado"].value_counts()
@@ -485,6 +489,8 @@ if not df.empty:
     ))
     fig2.update_layout(showlegend=False, paper_bgcolor="white", plot_bgcolor="white", font=dict(color="#0033A0"))
     st.plotly_chart(fig2, use_container_width=True)
+
+
 
     # 🧾 Cuadro con texto en azul BBVA
     st.markdown("""
@@ -508,6 +514,11 @@ if not df.empty:
         legitima=round(values[labels.index("LEGÍTIMA")] * 100 / sum(values), 1) if "LEGÍTIMA" in labels else 0
     ), unsafe_allow_html=True)
 
+
+    "\n"
+    "\n"
+    "\n"
+    "\n"
     # 📊 Frecuencia de fraudes por hora
     st.subheader("📊 Frecuencia de fraudes por hora")
     df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
@@ -556,7 +567,223 @@ if not df.empty:
         )
     )
 
+
+
     st.plotly_chart(fig, use_container_width=True)
+
+    "\n"
+    "\n"
+    "\n"
+    # 🧠 Minería de datos: Clustering y reglas de asociación
+    st.markdown("""
+    <div style="
+        background-color: white;
+        border: 2px solid #0033A0;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        margin-top: 20px;
+        margin-bottom: -5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 60px;
+    ">
+        <span style="color:#0033A0; font-family:'Segoe UI', sans-serif; font-size:30px; font-weight:600;">
+            🔍 MINERÍA DE DATOS
+        </span>
+    </div>
+""", unsafe_allow_html=True)
+
+
+    from sklearn.cluster import KMeans
+    from mlxtend.frequent_patterns import apriori, association_rules
+    from mlxtend.preprocessing import TransactionEncoder
+    from scipy.stats import poisson
+    from collections import defaultdict
+
+
+    "\n"
+    "\n"
+    "\n"
+    # ——— Agrupación por monto y hora (KMeans) con estilo BBVA ———
+    import numpy as np
+    from sklearn.cluster import KMeans
+
+    # Función para formatear monto como moneda mexicana
+    def formato_moneda(valor):
+        try:
+            return "${:,.2f}".format(float(valor))
+        except:
+            return valor
+
+    # Construir dataset para clustering a partir del filtrado
+    df_cluster = df_filtrado.copy()
+
+    # Asegurar columnas numéricas (monto puede venir formateado como texto con $ y comas)
+    df_cluster["hora"] = pd.to_numeric(df_cluster["hora"], errors="coerce")
+    df_cluster["monto"] = (
+        df_cluster["monto"]
+            .astype(str)
+            .replace(r"[\$,]", "", regex=True)
+            .replace(r"\s", "", regex=True)
+    )
+    df_cluster["monto"] = pd.to_numeric(df_cluster["monto"], errors="coerce")
+
+    # Subconjunto válido para clustering
+    X_cluster = df_cluster[["monto", "hora"]].dropna()
+
+    # Inicializar columna 'grupo' para evitar NameError aunque no haya clustering
+    df_cluster["grupo"] = np.nan
+
+    # Ejecutar KMeans solo si hay suficientes puntos
+    if len(X_cluster) >= 5:
+        kmeans = KMeans(n_clusters=3, random_state=42).fit(X_cluster)
+        # Asignar etiquetas respetando los índices válidos
+        df_cluster.loc[X_cluster.index, "grupo"] = kmeans.labels_
+
+        # Encabezado visual sin margen inferior para pegarse a la tabla
+        st.markdown("""
+            <div style="
+                background-color: white;
+                border: 2px solid #0033A0;
+                border-radius: 12px;
+                padding: 16px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                margin-top: 20px;
+                margin-bottom: -5px;
+            ">
+                <h4 style="color:#0033A0; font-family:Segoe UI;">📊 Agrupación por monto y hora (KMeans)</h4>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # Preparar tabla BBVA con texto centrado y monto formateado
+        tabla_kmeans = df_cluster.loc[X_cluster.index, ["monto", "hora", "grupo"]].head(10).copy()
+        tabla_kmeans.columns = ["Monto", "Hora", "Grupo"]
+        tabla_kmeans["Monto"] = tabla_kmeans["Monto"].apply(formato_moneda)
+        tabla_html = tabla_kmeans.to_html(classes="bbva-tabla", index=False, justify="center")
+
+        # CSS corporativo
+        st.markdown("""
+            <style>
+            .bbva-tabla {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 15px;
+                text-align: center;
+            }
+            .bbva-tabla th {
+                background-color: #0033A0;
+                color: white;
+                padding: 8px;
+                border: 1px solid #0033A0;
+            }
+            .bbva-tabla td {
+                background-color: #F5F8FA;
+                color: #0033A0;
+                padding: 8px;
+                border: 1px solid #0033A0;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown(tabla_html, unsafe_allow_html=True)
+    else:
+        st.info("⚠️ No hay suficientes datos limpios para clustering (se requieren ≥ 5 filas con monto y hora numéricos).")
+
+
+
+
+    "\n"
+    "\n"
+    "\n"
+    "\n"
+    # 📈 Modelo de Poisson: frecuencia de fraudes por hora
+    st.subheader("📈 Distribución de Poisson (fraudes por hora)")
+
+    media_poisson = np.mean(valores)
+    x_vals = np.arange(0, max(valores)+5)
+    y_vals = poisson.pmf(x_vals, mu=media_poisson)
+
+    fig_poisson = go.Figure(go.Bar(
+        x=x_vals,
+        y=y_vals,
+        text=[f"{y:.3f}" for y in y_vals],
+        textposition="outside",
+        marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
+        textfont=dict(color="#000000", size=14),
+        hovertemplate="Fraudes: %{x}<br>Probabilidad: %{y:.3f}<extra></extra>"
+    ))
+
+    fig_poisson.update_layout(
+        plot_bgcolor="black",
+        paper_bgcolor="black",
+        font=dict(color="#000000"),
+        margin=dict(l=40, r=40, t=40, b=40),
+        xaxis=dict(
+            title=dict(text="Cantidad de fraudes", font=dict(color="#000000", size=16)),
+            tickmode="linear",
+            tickfont=dict(color="#000000", size=12),
+            linecolor="#FFFFFF",
+            gridcolor="#444444",
+            showline=True,
+            showgrid=True,
+            zeroline=False
+        ),
+        yaxis=dict(
+            title=dict(text="Probabilidad", font=dict(color="#000000", size=16)),
+            tickfont=dict(color="#000000", size=12),
+            linecolor="#FFFFFF",
+            gridcolor="#444444",
+            showline=True,
+            showgrid=True,
+            zeroline=False
+        )
+    )
+
+    st.plotly_chart(fig_poisson, use_container_width=True)
+
+
+
+    
+    "\n"
+    "\n"
+    # 🔄 Cadenas de Markov: transiciones entre canales
+    st.markdown("""
+        <div style="
+            background-color: white;
+            border: 2px solid #0033A0;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            margin-bottom: 10px;
+        ">
+            <h4 style="color:#0033A0; font-family:Segoe UI;">🔄 Matriz de transición entre canales (Markov)</h4>
+        </div>
+    """, unsafe_allow_html=True)
+
+    canales = df_filtrado["canal"].tolist()
+    transiciones = list(zip(canales[:-1], canales[1:]))
+
+    conteo_transiciones = defaultdict(lambda: defaultdict(int))
+    for a, b in transiciones:
+        conteo_transiciones[a][b] += 1
+
+    canales_unicos = sorted(set(canales))
+    matriz = pd.DataFrame(index=canales_unicos, columns=canales_unicos).fillna(0)
+
+    for origen in conteo_transiciones:
+        total = sum(conteo_transiciones[origen].values())
+        for destino in conteo_transiciones[origen]:
+            matriz.loc[origen, destino] = conteo_transiciones[origen][destino] / total
+
+    st.dataframe(matriz.round(2), use_container_width=True)
+
+
+
+ 
 
 else:
     st.info("No hay transacciones en el historial para mostrar gráficas.")
