@@ -467,11 +467,8 @@ if not df.empty:
     excel_data = convertir_excel(df_filtrado)
     st.download_button("📥 Descargar historial en Excel", data=excel_data, file_name="historial_fraudes.xlsx")
 
-    # 📈 Proporción de fraudes detectados (3D con borde externo y leyenda lateral)
-   
-
+    # 📈 Proporción de fraudes detectados
     st.subheader("📈 Proporción de fraudes detectados:")
-
     conteo = df_filtrado["resultado"].value_counts()
     labels = conteo.index.tolist()
     values = conteo.values.tolist()
@@ -481,29 +478,13 @@ if not df.empty:
         values=values,
         hole=0.3,
         pull=[0.02]*len(labels),
-        marker=dict(
-            colors=["#0033A0", "aqua"],
-            line=dict(color="#0033A0", width=3)  # Borde externo azul BBVA
-        ),
+        marker=dict(colors=["#0033A0", "aqua"], line=dict(color="#0033A0", width=3)),
         textfont=dict(color="#0033A0", size=14),
         hoverinfo="label+percent+value",
         textinfo="percent"
     ))
-
-    fig2.update_layout(
-        title=None,  # Eliminamos el título interno para evitar duplicado
-        showlegend=False,
-        paper_bgcolor="white",
-        plot_bgcolor="white",
-        font=dict(color="#0033A0"),
-        margin=dict(l=20, r=20, t=20, b=20)
-    )
-
-
+    fig2.update_layout(showlegend=False, paper_bgcolor="white", plot_bgcolor="white", font=dict(color="#0033A0"))
     st.plotly_chart(fig2, use_container_width=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
 
     # 🧾 Cuadro con texto en azul BBVA
     st.markdown("""
@@ -527,53 +508,55 @@ if not df.empty:
         legitima=round(values[labels.index("LEGÍTIMA")] * 100 / sum(values), 1) if "LEGÍTIMA" in labels else 0
     ), unsafe_allow_html=True)
 
-# 📊 Frecuencia de fraudes por hora (fondo negro, texto negro)
-st.subheader("📊 Frecuencia de fraudes por hora")
+    # 📊 Frecuencia de fraudes por hora
+    st.subheader("📊 Frecuencia de fraudes por hora")
+    df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
+    df_fraudes["hora"] = pd.to_numeric(df_fraudes["hora"], errors="coerce")
 
-df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
-df_fraudes["hora"] = pd.to_numeric(df_fraudes["hora"], errors="coerce")
+    conteo_por_hora = df_fraudes["hora"].value_counts().sort_index()
+    horas = list(range(24))
+    etiquetas_horas = [str(h) for h in horas]
+    valores = [conteo_por_hora.get(h, 0) for h in horas]
 
-conteo_por_hora = df_fraudes["hora"].value_counts().sort_index()
-horas = list(range(24))
-etiquetas_horas = [str(h) for h in horas]
-valores = [conteo_por_hora.get(h, 0) for h in horas]
+    fig = go.Figure(go.Bar(
+        x=horas,
+        y=valores,
+        text=[str(v) for v in valores],
+        textposition="outside",
+        marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
+        textfont=dict(color="#000000", size=14),
+        hovertemplate="Hora %{x}<br>Fraudes: %{y}<extra></extra>"
+    ))
 
-fig = go.Figure(go.Bar(
-    x=horas,
-    y=valores,
-    text=[str(v) for v in valores],
-    textposition="outside",
-    marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
-    textfont=dict(color="#000000", size=14),  # Texto negro
-    hovertemplate="Hora %{x}<br>Fraudes: %{y}<extra></extra>"
-))
-
-fig.update_layout(
-    plot_bgcolor="black",       # Fondo del gráfico
-    paper_bgcolor="black",      # Fondo del lienzo
-    font=dict(color="#000000"), # Texto general en negro
-    margin=dict(l=40, r=40, t=40, b=40),
-    xaxis=dict(
-        title=dict(text="Hora", font=dict(color="#000000", size=16)),
-        tickmode="array",
-        tickvals=horas,
-        ticktext=etiquetas_horas,
-        linecolor="#FFFFFF",
-        gridcolor="#444444",
-        tickfont=dict(color="#000000", size=12),
-        showline=True,
-        showgrid=True,
-        zeroline=False
-    ),
-    yaxis=dict(
-        title=dict(text="Cantidad de fraudes", font=dict(color="#000000", size=16)),
-        linecolor="#FFFFFF",
-        gridcolor="#444444",
-        tickfont=dict(color="#000000", size=12),
-        showline=True,
-        showgrid=True,
-        zeroline=False
+    fig.update_layout(
+        plot_bgcolor="black",
+        paper_bgcolor="black",
+        font=dict(color="#000000"),
+        margin=dict(l=40, r=40, t=40, b=40),
+        xaxis=dict(
+            title=dict(text="Hora", font=dict(color="#000000", size=16)),
+            tickmode="array",
+            tickvals=horas,
+            ticktext=etiquetas_horas,
+            linecolor="#FFFFFF",
+            gridcolor="#444444",
+            tickfont=dict(color="#000000", size=12),
+            showline=True,
+            showgrid=True,
+            zeroline=False
+        ),
+        yaxis=dict(
+            title=dict(text="Cantidad de fraudes", font=dict(color="#000000", size=16)),
+            linecolor="#FFFFFF",
+            gridcolor="#444444",
+            tickfont=dict(color="#000000", size=12),
+            showline=True,
+            showgrid=True,
+            zeroline=False
+        )
     )
-)
 
-st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.info("No hay transacciones en el historial para mostrar gráficas.")
