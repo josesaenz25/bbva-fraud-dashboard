@@ -448,11 +448,23 @@ st.subheader("📂 Historial de transacciones")
 df = pd.DataFrame(st.session_state.historial)
 
 if not df.empty:
-    # 🔧 Filtrado por fecha
+    # 🔧 Filtrado por fecha con alineación central y separación visual
     df["fecha"] = pd.to_datetime(df["fecha"])
-    fecha_inicio = st.date_input("Desde", value=df["fecha"].min().date())
-    fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date())
+
+    # Ajuste de columnas para centrar y espaciar ~5cm (aproximado en proporción de pantalla)
+    col_izq, col_fecha1, col_espacio, col_fecha2, col_der = st.columns([1, 0.5, 1, 0.5, 1])
+
+    with col_fecha1:
+        fecha_inicio = st.date_input ("Desde", value=df["fecha"].min().date())
+
+    with col_fecha2:
+        fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date())
+
+    # Aplicar filtro
     df_filtrado = df[(df["fecha"].dt.date >= fecha_inicio) & (df["fecha"].dt.date <= fecha_fin)]
+
+
+
 
     # 🔧 Formateo visual
     df_filtrado["fecha"] = pd.to_datetime(df_filtrado["fecha"]).dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -606,7 +618,6 @@ if not df.empty:
 
 
 
-    "\n"
     # ——— Agrupación dinámica por monto y hora (KMeans) con resumen ejecutivo ———
     import numpy as np
     from sklearn.cluster import KMeans
@@ -717,7 +728,7 @@ if not df.empty:
 
         # Mostrar tabla y resumen
         st.markdown(tabla_html, unsafe_allow_html=True)
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        # st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("""
             <div style="
                 background-color: white;
@@ -728,7 +739,7 @@ if not df.empty:
                 margin-top: 10px;
                 margin-bottom: 10px;
             ">
-                <h4 style="color:#0033A0; font-family:Segoe UI;">🧠 Resumen ejecutivo de agrupamiento</h4>
+                <h4 style="color:#0033A0; font-family:Segoe UI;">🧠 Resumen de agrupamiento</h4>
             </div>
         """, unsafe_allow_html=True)
         st.markdown(resumen_html, unsafe_allow_html=True)
@@ -794,7 +805,7 @@ if not df.empty:
 
 
 
-    
+    "\n"
     "\n"
     "\n"
     # 🔄 Cadenas de Markov: transiciones entre canales
@@ -830,8 +841,31 @@ if not df.empty:
     st.dataframe(matriz.round(2), use_container_width=True)
 
 
+    st.markdown("""
+        <div style="
+            background-color: white;
+            border: 2px solid #0033A0;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-top: 0px;
+            margin-bottom: 35px;
+            color: #0033A0;
+            font-size: 16px;
+            font-family: 'Segoe UI', sans-serif;
+            text-align: justify;
+            line-height: 1.6;
+        ">
+            <h4 style="color:#0033A0; font-size: 22px; margin-bottom: 12px;">🧠 Explicación:</h4>
+            Esta matriz presenta las <strong>probabilidades de transición</strong> entre canales de transacción utilizados por los usuarios. 
+            Su análisis permite identificar <strong>patrones secuenciales</strong> y detectar <strong>comportamientos atípicos</strong> que podrían indicar riesgo de fraude. 
+            Esta herramienta fortalece la <strong>vigilancia operativa</strong> y optimiza la generación de <strong>alertas inteligentes</strong>.
+        </div>
+    """, unsafe_allow_html=True)
 
- 
+
+
+
 
 else:
     st.info("No hay transacciones en el historial para mostrar gráficas.")
