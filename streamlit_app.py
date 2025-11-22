@@ -20,7 +20,8 @@ import plotly.graph_objects as go
 import pytz
 
 
-
+zona_mexico = pytz.timezone("America/Mexico_City")
+ahora_local = datetime.now(zona_mexico)
 
 
 
@@ -387,7 +388,7 @@ if st.button("Evaluar transacción", key="evaluar_individual"):
         "canal": canal,
         "monto": monto,
         "hora": hora,
-        "fecha": datetime.now()
+        "fecha": ahora_local  # ✅ hora local CDMX
     }
     riesgo = modelo_predictivo(transaccion)
     transaccion["riesgo"] = riesgo
@@ -397,9 +398,6 @@ if st.button("Evaluar transacción", key="evaluar_individual"):
 
     color = "red" if transaccion["resultado"] == "FRAUDE" else "green"
     st.markdown(f"<h4 style='color:{color};'>Resultado: {transaccion['resultado']}</h4>", unsafe_allow_html=True)
-
-
-
 
 "\n"
 "\n"
@@ -423,7 +421,7 @@ if st.button("Simular 100 transacciones", key="simular_masiva"):
             "canal": canal,
             "monto": monto,
             "hora": hora,
-            "fecha": datetime.now()
+            "fecha": ahora_local  # ✅ hora local CDMX
         }
 
         riesgo = modelo_predictivo(transaccion)
