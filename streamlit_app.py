@@ -485,22 +485,53 @@ if not df.empty:
     "\n"
     # 📈 Proporción de fraudes detectados
     st.subheader("📈 Proporción de fraudes detectados:")
+
     conteo = df_filtrado["resultado"].value_counts()
     labels = conteo.index.tolist()
     values = conteo.values.tolist()
 
+    # Colores institucionales
+    colores = {
+        "FRAUDE": "#FF4B4B",       # rojo institucional
+        "LEGÍTIMA": "#00BFFF"      # azul claro
+    }
+    colores_usados = [colores.get(label, "#CCCCCC") for label in labels]
+
+    # Gráfico con estilo BBVA
     fig2 = go.Figure(go.Pie(
         labels=labels,
         values=values,
-        hole=0.3,
-        pull=[0.02]*len(labels),
-        marker=dict(colors=["#0033A0", "aqua"], line=dict(color="#0033A0", width=3)),
-        textfont=dict(color="#0033A0", size=14),
+        hole=0.4,
+        pull=[0.05]*len(labels),
+        marker=dict(colors=colores_usados, line=dict(color="#FFFFFF", width=2)),
+        textfont=dict(color="#0033A0", size=16),
         hoverinfo="label+percent+value",
-        textinfo="percent"
+        textinfo="label+percent",
+        insidetextorientation="radial"
     ))
-    fig2.update_layout(showlegend=False, paper_bgcolor="white", plot_bgcolor="white", font=dict(color="#0033A0"))
+
+    fig2.update_layout(
+        title=dict(
+            text="Distribución de transacciones",
+            font=dict(size=22, color="#0033A0"),
+            x=0.5
+        ),
+        showlegend=False,
+        paper_bgcolor="white",
+        plot_bgcolor="white",
+        font=dict(color="#0033A0"),
+        margin=dict(t=60, b=20, l=20, r=20),
+        annotations=[dict(
+            text="BBVA",
+            x=0.5, y=0.5,
+            font_size=20,
+            showarrow=False,
+            font=dict(color="#0033A0", family="Segoe UI")
+        )]
+    )
+
     st.plotly_chart(fig2, use_container_width=True)
+
 
 
 
