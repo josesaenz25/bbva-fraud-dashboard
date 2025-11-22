@@ -352,6 +352,24 @@ def mostrar_tabla_centrada_con_conteo(df):
 
 
 
+# 📂 Archivo donde se guardarán las transacciones
+ARCHIVO_HISTORIAL = "historial_transacciones.csv"
+
+def guardar_transaccion_csv(transaccion):
+    """Guarda una transacción en un archivo CSV persistente."""
+    df = pd.DataFrame([transaccion])
+    if not os.path.exists(ARCHIVO_HISTORIAL):
+        df.to_csv(ARCHIVO_HISTORIAL, index=False)
+    else:
+        df.to_csv(ARCHIVO_HISTORIAL, mode="a", header=False, index=False)
+
+def cargar_historial_csv():
+    """Carga todas las transacciones guardadas en el archivo CSV."""
+    if os.path.exists(ARCHIVO_HISTORIAL):
+        return pd.read_csv(ARCHIVO_HISTORIAL)
+    else:
+        return pd.DataFrame()
+
 # ---------------------- DATOS ----------------------
 
 PERFILES_POR_ID = {
@@ -365,13 +383,6 @@ if "historial" not in st.session_state:
 
 # ---------------------- INTERFAZ ----------------------
 
-
-
-
-
-"\n"
-"\n"
-"\n"
 # 🔄 Simulación individual
 st.subheader("🔄 Simular transacción en tiempo real")
 col1, col2, col3 = st.columns(3)
@@ -394,14 +405,14 @@ if st.button("Evaluar transacción", key="evaluar_individual"):
     transaccion["riesgo"] = riesgo
     transaccion["umbral"] = calcular_umbral(perfil)
     transaccion["resultado"] = "FRAUDE" if riesgo >= transaccion["umbral"] else "LEGÍTIMA"
+
+    # Guardar en memoria y en archivo CSV
     st.session_state.historial.append(transaccion)
+    guardar_transaccion_csv(transaccion)
 
     color = "red" if transaccion["resultado"] == "FRAUDE" else "green"
     st.markdown(f"<h4 style='color:{color};'>Resultado: {transaccion['resultado']}</h4>", unsafe_allow_html=True)
 
-"\n"
-"\n"
-"\n"
 # 🧪 Simulación masiva
 st.subheader("🧪 Simulación masiva de transacciones")
 
@@ -430,39 +441,27 @@ if st.button("Simular 100 transacciones", key="simular_masiva"):
         transaccion["resultado"] = "FRAUDE" if riesgo >= transaccion["umbral"] else "LEGÍTIMA"
 
         nuevas_transacciones.append(transaccion)
+        guardar_transaccion_csv(transaccion)  # ✅ Guardar cada transacción en CSV
 
-    # ✅ Actualizar el historial una sola vez
+    # ✅ Actualizar el historial en memoria
     st.session_state.historial.extend(nuevas_transacciones)
 
     # ✅ Confirmación visual
     st.success("✅ Simulación completada con 100 transacciones")
 
-
-"\n"
-"\n"
-"\n"
 # 📂 Historial y filtros
 st.subheader("📂 Historial de transacciones")
-df = pd.DataFrame(st.session_state.historial)
+
+# ✅ Cargar historial desde CSV (persistente)
+df = cargar_historial_csv()
 
 if not df.empty:
-    # 🔧 Filtrado por fecha con alineación central y separación visual
+    # 🔧 Filtrado por fecha
     df["fecha"] = pd.to_datetime(df["fecha"])
+    fecha_inicio = st.date_input("Desde", value=df["fecha"].min().date())
+    fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date())
 
-    # Ajuste de columnas para centrar y espaciar ~5cm (aproximado en proporción de pantalla)
-    col_izq, col_fecha1, col_espacio, col_fecha2, col_der = st.columns([1, 0.5, 1, 0.5, 1])
-
-    with col_fecha1:
-        fecha_inicio = st.date_input ("Desde", value=df["fecha"].min().date())
-
-    with col_fecha2:
-        fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date())
-
-    # Aplicar filtro
     df_filtrado = df[(df["fecha"].dt.date >= fecha_inicio) & (df["fecha"].dt.date <= fecha_fin)]
-
-
-
 
     # 🔧 Formateo visual
     df_filtrado["fecha"] = pd.to_datetime(df_filtrado["fecha"]).dt.strftime("%Y-%m-%d %H:%M:%S")
