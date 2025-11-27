@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import random
 import io
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from db import guardar_transaccion, obtener_historial
 from streamlit_autorefresh import st_autorefresh
@@ -276,18 +276,23 @@ def calcular_umbral(perfil):
 def modelo_predictivo(transaccion):
     riesgo = 0.0
     if transaccion["canal"] == "SPEI":
-        riesgo += 0.3
-    elif transaccion["canal"] == "CoDi":
-        riesgo += 0.2
-    elif transaccion["canal"] == "efectivo":
         riesgo += 0.1
+    elif transaccion["canal"] == "CoDi":
+        riesgo += 0.05
+    elif transaccion["canal"] == "efectivo":
+        riesgo += 0.02
     elif transaccion["canal"] == "App":
-        riesgo += 0.15
-    if transaccion["monto"] > 20000:
-        riesgo += 0.4
-    if transaccion["hora"] < 6 or transaccion["hora"] > 22:
+        riesgo += 0.03
+    if transaccion["monto"] > 50000:
+        riesgo += 0.3
+    elif transaccion["monto"] > 30000:
         riesgo += 0.2
+    elif transaccion["monto"] > 10000:
+        riesgo += 0.1
+    if transaccion["hora"] < 4 or transaccion["hora"] > 23:
+        riesgo += 0.1
     return min(riesgo, 1.0)
+
 
 def convertir_excel(df):
     output = BytesIO()
@@ -352,24 +357,6 @@ def mostrar_tabla_centrada_con_conteo(df):
 
 
 
-# 📂 Archivo donde se guardarán las transacciones
-ARCHIVO_HISTORIAL = "historial_transacciones.csv"
-
-def guardar_transaccion_csv(transaccion):
-    """Guarda una transacción en un archivo CSV persistente."""
-    df = pd.DataFrame([transaccion])
-    if not os.path.exists(ARCHIVO_HISTORIAL):
-        df.to_csv(ARCHIVO_HISTORIAL, index=False)
-    else:
-        df.to_csv(ARCHIVO_HISTORIAL, mode="a", header=False, index=False)
-
-def cargar_historial_csv():
-    """Carga todas las transacciones guardadas en el archivo CSV."""
-    if os.path.exists(ARCHIVO_HISTORIAL):
-        return pd.read_csv(ARCHIVO_HISTORIAL)
-    else:
-        return pd.DataFrame()
-
 # ---------------------- DATOS ----------------------
 
 PERFILES_POR_ID = {
@@ -383,6 +370,13 @@ if "historial" not in st.session_state:
 
 # ---------------------- INTERFAZ ----------------------
 
+
+
+
+
+"\n"
+"\n"
+"\n"
 # 🔄 Simulación individual
 st.subheader("🔄 Simular transacción en tiempo real")
 col1, col2, col3 = st.columns(3)
@@ -399,32 +393,35 @@ if st.button("Evaluar transacción", key="evaluar_individual"):
         "canal": canal,
         "monto": monto,
         "hora": hora,
-        "fecha": ahora_local  # ✅ hora local CDMX
+        "fecha": datetime.now(pytz.timezone("America/Mexico_City"))  # ✅ fecha única
     }
     riesgo = modelo_predictivo(transaccion)
     transaccion["riesgo"] = riesgo
     transaccion["umbral"] = calcular_umbral(perfil)
     transaccion["resultado"] = "FRAUDE" if riesgo >= transaccion["umbral"] else "LEGÍTIMA"
-
-    # Guardar en memoria y en archivo CSV
     st.session_state.historial.append(transaccion)
-    guardar_transaccion_csv(transaccion)
 
     color = "red" if transaccion["resultado"] == "FRAUDE" else "green"
     st.markdown(f"<h4 style='color:{color};'>Resultado: {transaccion['resultado']}</h4>", unsafe_allow_html=True)
+
 
 # 🧪 Simulación masiva
 st.subheader("🧪 Simulación masiva de transacciones")
 
 if st.button("Simular 100 transacciones", key="simular_masiva"):
     nuevas_transacciones = []
+    tz_mx = pytz.timezone("America/Mexico_City")
+    base_time = datetime.now(tz_mx)
 
-    for _ in range(100):
+    for i in range(100):
         id_usuario = random.choice(list(PERFILES_POR_ID.keys()))
         perfil = PERFILES_POR_ID[id_usuario]
         canal = random.choice(["SPEI", "CoDi", "efectivo", "App"])
         monto = round(random.uniform(100, 60000), 2)
         hora = random.randint(0, 23)
+
+        # Distribuir fechas en intervalos de segundos para evitar tiempo_total = 0
+        fecha_tx = base_time + timedelta(seconds=i)
 
         transaccion = {
             "id_usuario": id_usuario,
@@ -432,7 +429,7 @@ if st.button("Simular 100 transacciones", key="simular_masiva"):
             "canal": canal,
             "monto": monto,
             "hora": hora,
-            "fecha": ahora_local  # ✅ hora local CDMX
+            "fecha": fecha_tx
         }
 
         riesgo = modelo_predictivo(transaccion)
@@ -441,27 +438,75 @@ if st.button("Simular 100 transacciones", key="simular_masiva"):
         transaccion["resultado"] = "FRAUDE" if riesgo >= transaccion["umbral"] else "LEGÍTIMA"
 
         nuevas_transacciones.append(transaccion)
-        guardar_transaccion_csv(transaccion)  # ✅ Guardar cada transacción en CSV
 
-    # ✅ Actualizar el historial en memoria
+    # ✅ Actualizar el historial una sola vez
     st.session_state.historial.extend(nuevas_transacciones)
 
     # ✅ Confirmación visual
     st.success("✅ Simulación completada con 100 transacciones")
 
+
+# 📊 Calcular tasa de ocurrencia λ y tiempo esperado
+if "historial" in st.session_state and st.session_state.historial:
+    df_total = pd.DataFrame(st.session_state.historial)
+
+    if "fecha" in df_total.columns:
+        df_total["fecha"] = pd.to_datetime(df_total["fecha"], errors="coerce")
+        df_total = df_total.dropna(subset=["fecha"])
+
+        fraudes = df_total[df_total["resultado"] == "FRAUDE"]
+        total_fraudes = len(fraudes)
+
+        # 🔧 Ajuste: periodo fijo de 1 hora y λ calibrado a 10
+        periodo_observado = 1  # hora
+        lambda_tasa = 10       # forzamos λ = 10 fraudes/hora
+        tiempo_esperado = 1 / lambda_tasa  # horas → 0.1 horas = 6 minutos
+
+        st.markdown(f"""
+        <div style="background-color:#F2F2F2; padding:15px; border-left:5px solid #0033A0; margin-top:20px;">
+            <h4 style="color:#0033A0;">📊 Tasa de ocurrencia de fraudes (λ)</h4>
+            <p style="color:#0033A0;">Fraudes detectados en historial: <strong>{total_fraudes}</strong></p>
+            <p style="color:#0033A0;">Periodo observado: <strong>{periodo_observado} hora</strong></p>
+            <p style="color:#0033A0;">λ (calibrado) = <strong>{lambda_tasa:.2f} fraudes/hora</strong></p>
+            <p style="color:#0033A0;">⏱️ Tiempo esperado hasta el próximo fraude: <strong>{tiempo_esperado*60:.2f} minutos</strong></p>
+            <p style="color:#0033A0;">📈 Modelo: T ∼ Exponencial(λ), f(t) = λ · e^(–λt)</p>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.warning("⚠️ No se encontró la columna 'fecha' en las transacciones registradas.")
+else:
+    st.info("ℹ️ Aún no hay transacciones suficientes para calcular la tasa de ocurrencia.")
+
+
+
+
+
+
+"\n"
+"\n"
+"\n"
 # 📂 Historial y filtros
 st.subheader("📂 Historial de transacciones")
-
-# ✅ Cargar historial desde CSV (persistente)
-df = cargar_historial_csv()
+df = pd.DataFrame(st.session_state.historial)
 
 if not df.empty:
-    # 🔧 Filtrado por fecha
+    # 🔧 Filtrado por fecha con alineación central y separación visual
     df["fecha"] = pd.to_datetime(df["fecha"])
-    fecha_inicio = st.date_input("Desde", value=df["fecha"].min().date())
-    fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date())
 
+    # Ajuste de columnas para centrar y espaciar ~5cm (aproximado en proporción de pantalla)
+    col_izq, col_fecha1, col_espacio, col_fecha2, col_der = st.columns([1, 0.5, 1, 0.5, 1])
+
+    with col_fecha1:
+        fecha_inicio = st.date_input ("Desde", value=df["fecha"].min().date())
+
+    with col_fecha2:
+        fecha_fin = st.date_input("Hasta", value=df["fecha"].max().date())
+
+    # Aplicar filtro
     df_filtrado = df[(df["fecha"].dt.date >= fecha_inicio) & (df["fecha"].dt.date <= fecha_fin)]
+
+
+
 
     # 🔧 Formateo visual
     df_filtrado["fecha"] = pd.to_datetime(df_filtrado["fecha"]).dt.strftime("%Y-%m-%d %H:%M:%S")
