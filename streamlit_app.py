@@ -405,6 +405,10 @@ if st.button("Evaluar transacción", key="evaluar_individual"):
     st.markdown(f"<h4 style='color:{color};'>Resultado: {transaccion['resultado']}</h4>", unsafe_allow_html=True)
 
 
+
+"\n"
+"\n"
+"\n"
 # 🧪 Simulación masiva
 st.subheader("🧪 Simulación masiva de transacciones")
 
@@ -446,36 +450,8 @@ if st.button("Simular 100 transacciones", key="simular_masiva"):
     st.success("✅ Simulación completada con 100 transacciones")
 
 
-# 📊 Calcular tasa de ocurrencia λ y tiempo esperado
-if "historial" in st.session_state and st.session_state.historial:
-    df_total = pd.DataFrame(st.session_state.historial)
 
-    if "fecha" in df_total.columns:
-        df_total["fecha"] = pd.to_datetime(df_total["fecha"], errors="coerce")
-        df_total = df_total.dropna(subset=["fecha"])
 
-        fraudes = df_total[df_total["resultado"] == "FRAUDE"]
-        total_fraudes = len(fraudes)
-
-        # 🔧 Ajuste: periodo fijo de 1 hora y λ calibrado a 10
-        periodo_observado = 1  # hora
-        lambda_tasa = 10       # forzamos λ = 10 fraudes/hora
-        tiempo_esperado = 1 / lambda_tasa  # horas → 0.1 horas = 6 minutos
-
-        st.markdown(f"""
-        <div style="background-color:#F2F2F2; padding:15px; border-left:5px solid #0033A0; margin-top:20px;">
-            <h4 style="color:#0033A0;">📊 Tasa de ocurrencia de fraudes (λ)</h4>
-            <p style="color:#0033A0;">Fraudes detectados en historial: <strong>{total_fraudes}</strong></p>
-            <p style="color:#0033A0;">Periodo observado: <strong>{periodo_observado} hora</strong></p>
-            <p style="color:#0033A0;">λ (calibrado) = <strong>{lambda_tasa:.2f} fraudes/hora</strong></p>
-            <p style="color:#0033A0;">⏱️ Tiempo esperado hasta el próximo fraude: <strong>{tiempo_esperado*60:.2f} minutos</strong></p>
-            <p style="color:#0033A0;">📈 Modelo: T ∼ Exponencial(λ), f(t) = λ · e^(–λt)</p>
-        </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.warning("⚠️ No se encontró la columna 'fecha' en las transacciones registradas.")
-else:
-    st.info("ℹ️ Aún no hay transacciones suficientes para calcular la tasa de ocurrencia.")
 
 
 
@@ -604,8 +580,46 @@ if not df.empty:
     "\n"
     "\n"
     "\n"
+
+
+
+
+    # 📊 Calcular tasa de ocurrencia λ y tiempo esperado
+    if "historial" in st.session_state and st.session_state.historial:
+        df_total = pd.DataFrame(st.session_state.historial)
+
+        if "fecha" in df_total.columns:
+            df_total["fecha"] = pd.to_datetime(df_total["fecha"], errors="coerce")
+            df_total = df_total.dropna(subset=["fecha"])
+
+            fraudes = df_total[df_total["resultado"] == "FRAUDE"]
+            total_fraudes = len(fraudes)
+
+            # 🔧 Ajuste: periodo fijo de 1 hora y λ calibrado a 10
+            periodo_observado = 1  # hora
+            lambda_tasa = 10       # forzamos λ = 10 fraudes/hora
+            tiempo_esperado = 1 / lambda_tasa  # horas → 0.1 horas = 6 minutos
+
+            st.markdown(f"""
+            <div style="background-color:#F2F2F2; padding:15px; border-left:5px solid #0033A0; margin-top:20px;">
+                <h4 style="color:#0033A0;">📊 Tasa de ocurrencia de fraudes por hora (λ)</h4>
+                <p style="color:#0033A0;">Fraudes detectados en historial: <strong>{total_fraudes}</strong></p>
+                <p style="color:#0033A0;">Periodo observado: <strong>{periodo_observado} hora</strong></p>
+                <p style="color:#0033A0;">λ (calibrado) = <strong>{lambda_tasa:.2f} fraudes/hora</strong></p>
+                <p style="color:#0033A0;">⏱️ Tiempo esperado hasta el próximo fraude: <strong>{tiempo_esperado*60:.2f} minutos</strong></p>
+                <p style="color:#0033A0;">📈 Modelo: T ∼ Exponencial(λ), f(t) = λ · e^(–λt)</p>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.warning("⚠️ No se encontró la columna 'fecha' en las transacciones registradas.")
+    else:
+        st.info("ℹ️ Aún no hay transacciones suficientes para calcular la tasa de ocurrencia.")
+
+
     # 📊 Frecuencia de fraudes por hora
-    st.subheader("📊 Frecuencia de fraudes por hora")
+    # st.subheader("📊 Frecuencia de fraudes por hora")
+
+    "\n"
     df_fraudes = df_filtrado[df_filtrado["resultado"] == "FRAUDE"].copy()
     df_fraudes["hora"] = pd.to_numeric(df_fraudes["hora"], errors="coerce")
 
@@ -827,54 +841,7 @@ if not df.empty:
 
 
 
-    "\n"
-    "\n"
-    "\n"
-    "\n"
-    # 📈 Modelo de Poisson: frecuencia de fraudes por hora
-    st.subheader("📈 Distribución de Poisson (fraudes por hora)")
 
-    media_poisson = np.mean(valores)
-    x_vals = np.arange(0, max(valores)+5)
-    y_vals = poisson.pmf(x_vals, mu=media_poisson)
-
-    fig_poisson = go.Figure(go.Bar(
-        x=x_vals,
-        y=y_vals,
-        text=[f"{y:.3f}" for y in y_vals],
-        textposition="outside",
-        marker=dict(color="#0033A0", line=dict(color="#FFFFFF", width=2)),
-        textfont=dict(color="#000000", size=14),
-        hovertemplate="Fraudes: %{x}<br>Probabilidad: %{y:.3f}<extra></extra>"
-    ))
-
-    fig_poisson.update_layout(
-        plot_bgcolor="black",
-        paper_bgcolor="black",
-        font=dict(color="#000000"),
-        margin=dict(l=40, r=40, t=40, b=40),
-        xaxis=dict(
-            title=dict(text="Cantidad de fraudes", font=dict(color="#000000", size=16)),
-            tickmode="linear",
-            tickfont=dict(color="#000000", size=12),
-            linecolor="#FFFFFF",
-            gridcolor="#444444",
-            showline=True,
-            showgrid=True,
-            zeroline=False
-        ),
-        yaxis=dict(
-            title=dict(text="Probabilidad", font=dict(color="#000000", size=16)),
-            tickfont=dict(color="#000000", size=12),
-            linecolor="#FFFFFF",
-            gridcolor="#444444",
-            showline=True,
-            showgrid=True,
-            zeroline=False
-        )
-    )
-
-    st.plotly_chart(fig_poisson, use_container_width=True)
 
 
 
